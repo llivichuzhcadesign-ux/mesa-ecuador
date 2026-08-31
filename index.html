@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#17633d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Mesa Ecuador" />
+  <title>Mesa Ecuador</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-wrap">
+          <div class="brand-mark" aria-hidden="true">M</div>
+          <div>
+            <h1>Mesa Ecuador</h1>
+            <p id="headerSubtitle">Family meal planner</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span id="syncBadge" class="sync-badge is-local" title="Storage status">Local</span>
+          <button id="settingsButton" class="icon-button" type="button" aria-label="Open settings" title="Settings">⚙</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="nav-button is-active" type="button" data-view="today" aria-current="page"><span aria-hidden="true">☀</span><span>Today</span></button>
+      <button class="nav-button" type="button" data-view="calendar"><span aria-hidden="true">▦</span><span>Calendar</span></button>
+      <button class="nav-button" type="button" data-view="pantry"><span aria-hidden="true">◉</span><span>Food</span></button>
+      <button class="nav-button" type="button" data-view="grocery"><span aria-hidden="true">✓</span><span>Groceries</span></button>
+      <button class="nav-button" type="button" data-view="recipes"><span aria-hidden="true">▤</span><span>Recipes</span></button>
+    </nav>
+
+    <main id="mainContent" tabindex="-1"></main>
+  </div>
+
+  <dialog id="settingsDialog" class="settings-dialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">Family app</p><h2>Settings</h2></div>
+        <button class="icon-button" value="cancel" aria-label="Close settings">×</button>
+      </div>
+
+      <label class="field-label" for="familySize">People eating</label>
+      <select id="familySize" class="field-control">
+        <option value="1">1 person</option><option value="2">2 people</option><option value="3">3 people</option><option value="4">4 people</option>
+        <option value="5">5 people</option><option value="6">6 people</option><option value="7">7 people</option><option value="8">8 people</option>
+      </select>
+
+      <fieldset class="field-group"><legend>Appearance</legend><div class="segmented-control" id="themeControl">
+        <button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button><button type="button" data-theme="system">System</button>
+      </div></fieldset>
+
+      <fieldset class="field-group"><legend>Text size</legend><div class="segmented-control" id="textScaleControl">
+        <button type="button" data-scale="0.95">A</button><button type="button" data-scale="1">A+</button><button type="button" data-scale="1.12">A++</button>
+      </div></fieldset>
+
+      <section class="sync-card" aria-labelledby="syncHeading">
+        <div class="sync-heading"><div><p class="eyebrow">Optional</p><h3 id="syncHeading">Family sync</h3></div><span id="syncStatusText">Local only</span></div>
+        <p>Connect the Google Sheet once on each device. After that, pantry, calendar and groceries stay in sync.</p>
+        <label class="field-label" for="syncUrl">Google Apps Script web app URL</label>
+        <input id="syncUrl" class="field-control" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+        <label class="field-label" for="syncToken">Family key</label>
+        <input id="syncToken" class="field-control" type="password" placeholder="Choose the same key on every device" autocomplete="off" />
+        <div class="sync-actions">
+          <button id="connectSyncButton" class="primary-button" type="button">Connect & sync</button>
+          <button id="pullSyncButton" class="secondary-button" type="button">Pull family data</button>
+          <button id="disconnectSyncButton" class="ghost-button" type="button">Use local only</button>
+        </div>
+      </section>
+
+      <details class="backup-details">
+        <summary>Backup & reset</summary>
+        <div class="settings-actions">
+          <button id="exportButton" class="secondary-button" type="button">Export backup</button>
+          <label class="secondary-button file-button">Import backup<input id="importInput" type="file" accept="application/json" /></label>
+          <button id="resetButton" class="danger-button" type="button">Reset meal data</button>
+        </div>
+      </details>
+
+      <p class="privacy-note">The website works without sync. When family sync is connected, only the meal-planner state is sent to your Google Sheet.</p>
+      <button class="primary-button full-width" value="done">Done</button>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
