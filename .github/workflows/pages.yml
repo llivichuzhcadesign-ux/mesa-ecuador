@@ -23,15 +23,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Connect live Google Sheets backend
+      - name: Connect live Google Sheets backend and recipe scanner
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text()
-          tag = '<script src="sheets-sync.js"></script>'
-          if tag not in s:
-              s = s.replace('</body>', tag + '\n</body>')
+          tags = [
+              '<script src="sheets-sync.js"></script>',
+              '<script src="recipe-scanner.js"></script>',
+          ]
+          for tag in tags:
+              if tag not in s:
+                  s = s.replace('</body>', tag + '\n</body>')
           p.write_text(s)
           PY
       - name: Setup Pages
