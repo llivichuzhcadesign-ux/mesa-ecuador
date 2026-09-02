@@ -20,6 +20,7 @@ function doPost(e) {
     else if (action === 'set_meal') result = setMeal_(params.fecha, params.tipo, params.receta_id);
     else if (action === 'set_lock') result = setLock_(params.fecha, params.tipo, params.bloqueada);
     else if (action === 'set_setting') result = setSetting_(params.clave, params.valor);
+    else if (action === 'add_recipe') result = addRecipe_(params);
     else result = { ok: false, error: 'Acción POST no válida' };
     return respond_(result);
   } catch (err) {
@@ -56,13 +57,16 @@ function setFood_(id, disponible) {
   if (!id) throw new Error('Falta id de alimento');
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEETS.foods);
   const values = sheet.getDataRange().getValues();
+  const wanted = normalize_(id);
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(id)) {
+    if (normalize_(values[i][0]) === wanted || normalize_(values[i][1]) === wanted) {
       sheet.getRange(i + 1, 4).setValue(toBool_(disponible));
       return { ok: true };
     }
   }
-  throw new Error('Alimento no encontrado: ' + id);
+  const display = titleCase_(String(id).trim());
+  sheet.appendRow([String(id).trim().toLowerCase(), display, categoryForFood_(id), toBool_(disponible)]);
+  return { ok: true, created: true };
 }
 
 function setMeal_(fecha, tipo, recetaId) {
@@ -107,6 +111,87 @@ function setSetting_(clave, valor) {
   }
   sheet.appendRow([clave, valor]);
   return { ok: true };
+}
+
+function addRecipe_(params) {
+  const nombre = String(params.nombre || '').trim();
+  const tipo = ['Desayuno', 'Almuerzo', 'Cena'].indexOf(String(params.tipo)) >= 0 ? String(params.tipo) : 'Almuerzo';
+  const minutos = Math.max(1, Math.min(600, Number(params.minutos) || 30));
+  const ingredientes = unique_(String(params.ingredientes || '').split('|').map(x => x.trim().toLowerCase()).filter(Boolean));
+  const instrucciones = String(params.instrucciones || '').trim();
+  const foto = String(params.foto_archivo || '').trim();
+  if (!nombre) throw new Error('La receta necesita nombre');
+  if (!ingredientes.length) throw new Error('La receta necesita ingredientes');
+  if (!instrucciones) throw new Error('La receta necesita instrucciones');
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const recipes = ss.getSheetByName(SHEETS.recipes);
+  const values = recipes.getDataRange().getValues();
+  const normalizedName = normalize_(nombre);
+  for (let i = 1; i < values.length; i++) {
+    if (normalize_(values[i][1]) === normalizedName) throw new Error('Ya existe una receta con ese nombre');
+  }
+
+  const usedIds = values.slice(1).map(row => String(row[0] || ''));
+  const id = uniqueRecipeId_(slug_(nombre), usedIds);
+  recipes.appendRow([id, nombre, tipo, minutos, ingredientes.join('|'), instrucciones, foto, true]);
+  ensureFoods_(ss.getSheetByName(SHEETS.foods), ingredientes);
+  return { ok: true, id: id, nombre: nombre };
+}
+
+function ensureFoods_(sheet, ingredients) {
+  const values = sheet.getDataRange().getValues();
+  const existing = {};
+  for (let i = 1; i < values.length; i++) {
+    existing[normalize_(values[i][0])] = true;
+    existing[normalize_(values[i][1])] = true;
+  }
+  ingredients.forEach(name => {
+    if (!existing[normalize_(name)]) {
+      sheet.appendRow([name.toLowerCase(), titleCase_(name), categoryForFood_(name), false]);
+      existing[normalize_(name)] = true;
+    }
+  });
+}
+
+function categoryForFood_(name) {
+  const n = normalize_(name);
+  if (/pollo|cerdo|res|carne|pescado|atun|albacora|camaron|huevo|huevos|pavo/.test(n)) return 'Proteínas';
+  if (/queso|leche|mantequilla|yogur|crema/.test(n)) return 'Lácteos';
+  if (/arroz|lenteja|frejol|frijol|mote|maiz|choclo|harina|avena|quinua|pasta/.test(n)) return 'Granos y harinas';
+  if (/platano|banano|limon|naranja|manzana|mango|piña|pina|fruta/.test(n)) return 'Plátanos y frutas';
+  if (/papa|yuca|tomate|cebolla|cilantro|aguacate|ajo|pimiento|zanahoria|lechuga|apio|perejil|vegetal/.test(n)) return 'Vegetales y hierbas';
+  return 'Otros';
+}
+
+function slug_(value) {
+  let s = normalize_(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return s || ('receta-' + new Date().getTime());
+}
+
+function uniqueRecipeId_(base, used) {
+  let id = base;
+  let n = 2;
+  while (used.indexOf(id) >= 0) id = base + '-' + n++;
+  return id;
+}
+
+function unique_(items) {
+  const seen = {};
+  return items.filter(x => {
+    const k = normalize_(x);
+    if (!k || seen[k]) return false;
+    seen[k] = true;
+    return true;
+  });
+}
+
+function normalize_(value) {
+  return String(value == null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function titleCase_(value) {
+  return String(value || '').trim().replace(/\b\S/g, c => c.toUpperCase());
 }
 
 function toBool_(value) {
