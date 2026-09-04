@@ -32,6 +32,7 @@ jobs:
           tags = [
               '<script src="sheets-sync.js"></script>',
               '<script src="recipe-scanner.js"></script>',
+              '<script src="recipe-button-ui.js"></script>',
           ]
           for tag in tags:
               if tag not in s:
