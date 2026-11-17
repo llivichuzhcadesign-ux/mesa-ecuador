@@ -33,6 +33,7 @@ jobs:
               '<script src="sheets-sync.js"></script>',
               '<script src="recipe-scanner.js"></script>',
               '<script src="recipe-camera-controls.js"></script>',
+              '<script src="alimentos-ui.js"></script>',
           ]
           for tag in tags:
               if tag not in s:
