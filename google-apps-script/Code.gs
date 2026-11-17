@@ -21,6 +21,7 @@ function doPost(e) {
     else if (action === 'set_lock') result = setLock_(params.fecha, params.tipo, params.bloqueada);
     else if (action === 'set_setting') result = setSetting_(params.clave, params.valor);
     else if (action === 'add_recipe') result = addRecipe_(params);
+    else if (action === 'save_foods') result = saveFoods_(params);
     else result = { ok: false, error: 'Acción POST no válida' };
     return respond_(result);
   } catch (err) {
@@ -111,6 +112,49 @@ function setSetting_(clave, valor) {
   }
   sheet.appendRow([clave, valor]);
   return { ok: true };
+}
+
+function saveFoods_(params) {
+  const payload = JSON.parse(String(params.changes || '{}'));
+  const adds = Array.isArray(payload.add) ? payload.add : [];
+  const renames = Array.isArray(payload.rename) ? payload.rename : [];
+  const deletes = Array.isArray(payload.delete) ? payload.delete : [];
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEETS.foods);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0] || ['id','nombre','categoria','disponible'];
+  let rows = values.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+
+  const deleteSet = {};
+  deletes.forEach(id => deleteSet[normalize_(id)] = true);
+  rows = rows.filter(r => !deleteSet[normalize_(r[0])]);
+
+  renames.forEach(item => {
+    const id = normalize_(item && item.id);
+    const name = String(item && item.name || '').trim();
+    if (!id || !name) return;
+    const row = rows.find(r => normalize_(r[0]) === id);
+    if (row) row[1] = name;
+  });
+
+  const existing = {};
+  rows.forEach(r => { existing[normalize_(r[0])] = true; existing[normalize_(r[1])] = true; });
+  adds.forEach(item => {
+    const name = String(item && (item.name || item) || '').trim();
+    if (!name) return;
+    const key = normalize_(name);
+    if (existing[key]) return;
+    let id = slug_(name);
+    let base = id, n = 2;
+    while (existing[normalize_(id)]) id = base + '-' + n++;
+    rows.push([id, name, categoryForFood_(name), true]);
+    existing[normalize_(id)] = true;
+    existing[key] = true;
+  });
+
+  sheet.clearContents();
+  sheet.getRange(1,1,1,headers.length).setValues([headers]);
+  if (rows.length) sheet.getRange(2,1,rows.length,headers.length).setValues(rows.map(r => headers.map((_,i) => r[i] == null ? '' : r[i])));
+  return { ok: true, count: rows.length };
 }
 
 function addRecipe_(params) {
