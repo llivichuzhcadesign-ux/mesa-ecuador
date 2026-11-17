@@ -92,9 +92,12 @@
     }
 
     state.pantry = {};
+    window.MESA_FOODS = (data.foods || []).map(food => ({ ...food }));
     for (const ingredient of ING) state.pantry[ingredient] = true;
-    for (const food of (data.foods || [])) {
+    for (const food of window.MESA_FOODS) {
       const ingredient = sheetIngredient(food.id || food.nombre);
+      if (!ING.includes(ingredient)) ING.push(ingredient);
+      if (food.nombre) LABELS[ingredient] = food.nombre;
       state.pantry[ingredient] = String(food.disponible).toLowerCase() === 'true';
     }
 
