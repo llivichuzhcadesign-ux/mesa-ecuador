@@ -1,12 +1,12 @@
 {
-  "name": "Mesa Ecuador",
-  "short_name": "Mesa Ecuador",
+  "name": "JAMA · Mesa Ecuador",
+  "short_name": "JAMA",
   "id": "/mesa-ecuador/",
   "start_url": "/mesa-ecuador/",
   "scope": "/mesa-ecuador/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#17633d",
+  "background_color": "#faf5e9",
+  "theme_color": "#171714",
   "icons": [
     {
       "src": "icon-192.png",
